@@ -1,5 +1,6 @@
 import random
 import heapq
+import copy
 
 class Graph:
     def __init__(self):
@@ -120,4 +121,72 @@ class Graph:
                     previous_nodes[neighbor] = current_node
                     heapq.heappush(priority_queue, (distance, neighbor))
         return distances, previous_nodes
+
+    def lowest_cost_walk(self, start: int, end: int):
+
+        # d[k][x] = lowest cost from start to x in at most k steps
+        nodes = list(self.__adj.keys())
+        n = len(nodes)
+        max_length = n  # maximum possible length without cycles is n-1, n allows cycle detection
+
+        d = [[float('inf')] * n for _ in range(max_length + 1)]
+        # predecessor table to reconstruct the path
+        predecessor = [[None for _ in range(n)] for _ in range(max_length + 1)]
+
+        # map node values to indices for easier access
+        node_to_index = {node: idx for idx, node in enumerate(nodes)}
+        start_idx = node_to_index[start]
+
+        # base case: starting node has cost 0 with 0 steps
+        d[0][start_idx] = 0
+
+        for k in range(1, max_length + 1):
+            d[k] = d[k - 1].copy()
+            predecessor[k] = predecessor[k - 1].copy()
+
+            for node in nodes:
+                node_idx = node_to_index[node]
+                for neighbor, cost in self.__adj[node]:
+                    neighbor_idx = node_to_index[neighbor]
+                    if d[k - 1][node_idx] + cost < d[k][neighbor_idx]:
+                        d[k][neighbor_idx] = d[k - 1][node_idx] + cost
+                        predecessor[k][neighbor_idx] = node
+
+        # check for negative cost cycles
+        for node in nodes:
+            node_idx = node_to_index[node]
+            if d[max_length][node_idx] < d[max_length - 1][node_idx]:
+                return "Negative cost cycle detected"
+
+        end_idx = node_to_index.get(end, -1)
+        if end_idx == -1 or d[max_length][end_idx] == float('inf'):
+            return "No path exists between the given vertices"
+
+        # reconstruct the path
+        path = []
+        current_node = end
+        current_idx = node_to_index[current_node]
+        k = max_length
+
+        # find the first k where the cost changes
+        while k > 0 and d[k][current_idx] == d[k - 1][current_idx]:
+            k -= 1
+
+        # reconstruct the path
+        while current_node is not None and k >= 0:
+            path.append(current_node)
+            current_idx = node_to_index[current_node]
+            current_node = predecessor[k][current_idx]
+            k -= 1
+
+        path.reverse()
+
+        return (d[max_length][end_idx], path)
+
+    def copy(self):
+        new_graph = Graph()
+        new_graph.__nodes = self.__nodes
+        new_graph.__edges = self.__edges
+        new_graph.__adj = copy.deepcopy(self.__adj)
+        return new_graph
 

@@ -15,6 +15,7 @@ def main():
         print("7. Write to file")
         print("8. Read from file")
         print("9. Run Dijkstra's Algorithm")
+        print("10. Find lowest cost walk")
         print("0. Exit")
 
         choice = input("Enter your choice: ")
@@ -46,6 +47,17 @@ def main():
         elif choice == "9":
             start = int(input("Enter start node: "))
             print("Dijkstra's result:", g.dijkstra(start))
+        elif choice == "10":
+            start = int(input("Enter start node: "))
+            end = int(input("Enter end node: "))
+            result = g.lowest_cost_walk(start, end)
+            if isinstance(result, tuple):
+                cost, path = result
+                print(f"Lowest cost walk from {start} to {end}:")
+                print(f"Cost: {cost}")
+                print(f"Path: {' -> '.join(map(str, path))}")
+            else:
+                print(result)  # Prints error message
         elif choice == "0":
             break
         else:
