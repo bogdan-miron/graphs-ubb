@@ -190,3 +190,71 @@ class Graph:
         new_graph.__adj = copy.deepcopy(self.__adj)
         return new_graph
 
+    def is_dag_and_topological_sort(self):
+        visited = {}
+        topological_order = []
+        has_cycle = [False]  # Using a list to allow modification in nested function
+
+        for node in self.__adj:
+            visited[node] = 'unvisited'
+
+        def dfs(u):
+            if visited[u] == 'visiting':
+                has_cycle[0] = True
+                return
+            if visited[u] == 'visited':
+                return
+            visited[u] = 'visiting'
+            for v, _ in self.__adj[u]:
+                dfs(v)
+                if has_cycle[0]:
+                    return
+            visited[u] = 'visited'
+            topological_order.append(u)
+
+        for node in self.__adj:
+            if visited[node] == 'unvisited':
+                dfs(node)
+                if has_cycle[0]:
+                    break  # Early exit if cycle detected
+
+        if has_cycle[0]:
+            return (False, None)
+        else:
+            topological_order.reverse()
+            return (True, topological_order)
+
+    def highest_cost_path(self, start, end):
+        if start not in self.__adj:
+            raise ValueError(f"Start node {start} not in graph.")
+        if end not in self.__adj:
+            raise ValueError(f"End node {end} not in graph.")
+
+        is_dag, topo_order = self.is_dag_and_topological_sort()
+        if not is_dag:
+            raise ValueError("Graph is not a DAG. Cannot compute highest cost path.")
+
+        dist = {node: float('-inf') for node in self.__adj}
+        pred = {node: None for node in self.__adj}
+        dist[start] = 0
+
+        for u in topo_order:
+            if dist[u] == float('-inf'):
+                continue
+            for v, cost in self.__adj[u]:
+                if dist[v] < dist[u] + cost:
+                    dist[v] = dist[u] + cost
+                    pred[v] = u
+
+        if dist[end] == float('-inf'):
+            return (None, [])
+
+        path = []
+        current = end
+        while current is not None:
+            path.append(current)
+            current = pred[current]
+        path.reverse()
+
+        return (dist[end], path)
+
